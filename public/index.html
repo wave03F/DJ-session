@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Music World</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Join Modal -->
+  <div id="join-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>Enter the World</h2>
+      <p class="modal-subtitle">Pick a name and color for your pixel character</p>
+      <div class="modal-form">
+        <input type="text" id="nickname-input" placeholder="Your name" maxlength="12" autocomplete="off">
+        <div class="color-picker">
+          <label>Character color:</label>
+          <div class="color-options">
+            <button class="color-btn selected" data-color="#6366f1" style="background:#6366f1"></button>
+            <button class="color-btn" data-color="#ec4899" style="background:#ec4899"></button>
+            <button class="color-btn" data-color="#14b8a6" style="background:#14b8a6"></button>
+            <button class="color-btn" data-color="#f59e0b" style="background:#f59e0b"></button>
+            <button class="color-btn" data-color="#ef4444" style="background:#ef4444"></button>
+            <button class="color-btn" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+            <button class="color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
+            <button class="color-btn" data-color="#10b981" style="background:#10b981"></button>
+          </div>
+        </div>
+        <button id="join-btn" class="btn-primary">Enter World</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Game -->
+  <div id="game-container" class="hidden">
+    <!-- Canvas World -->
+    <div id="world-viewport">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- Queue Panel (right side) -->
+    <div id="queue-panel">
+      <div class="now-playing-box">
+        <h3>Now Playing</h3>
+        <div id="now-playing-info">
+          <p id="song-title">No song playing</p>
+          <p id="song-dj" class="text-muted">Add a YouTube URL below</p>
+        </div>
+        <div class="player-controls">
+          <button id="skip-btn" class="btn-small" title="Skip">Skip</button>
+        </div>
+      </div>
+
+      <div class="add-song-box">
+        <input type="text" id="song-url-input" placeholder="Paste YouTube URL..." autocomplete="off">
+        <button id="add-song-btn" class="btn-primary btn-small">Add</button>
+      </div>
+
+      <div class="queue-box">
+        <h4>Queue <span id="queue-count">(0)</span></h4>
+        <ul id="queue-list"></ul>
+      </div>
+    </div>
+
+    <!-- Chat bar at bottom -->
+    <div id="chat-bar">
+      <div class="emote-bar">
+        <button class="emote-btn" data-emote="dance" title="Dance (1)">💃</button>
+        <button class="emote-btn" data-emote="wave" title="Wave (2)">👋</button>
+        <button class="emote-btn" data-emote="jump" title="Jump (3)">⬆️</button>
+        <button class="emote-btn" data-emote="spin" title="Spin (4)">🌀</button>
+        <button class="emote-btn" data-emote="heart" title="Heart (5)">❤️</button>
+      </div>
+      <input type="text" id="chat-input" placeholder="Press Enter to chat... (1-5 for emotes)" maxlength="150" autocomplete="off">
+    </div>
+
+    <!-- Hidden YouTube player -->
+    <div id="youtube-player-wrap">
+      <div id="youtube-player"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

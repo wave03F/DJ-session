@@ -1,0 +1,14 @@
+{
+  "name": "virtual-music-room",
+  "version": "1.0.0",
+  "description": "A real-time virtual music room with Socket.io and YouTube player",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "4.18.2",
+    "socket.io": "4.7.2"
+  }
+}
