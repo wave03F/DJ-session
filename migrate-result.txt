@@ -1,0 +1,2 @@
+MIGRATE OK: batch 6, 4 new migrations
+["027_create_payments_table.js","028_create_premium_subscriptions_table.js","029_create_vip_tickets_table.js","030_add_indexes_for_performance.js"]

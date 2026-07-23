@@ -59,9 +59,7 @@ const WORD_COLORS = [
 ];
 
 // ─── DOM ─────────────────────────────────────────────────────────────────────
-const joinModal = document.getElementById('join-modal');
 const nicknameInput = document.getElementById('nickname-input');
-const joinBtn = document.getElementById('join-btn');
 const gameContainer = document.getElementById('game-container');
 const songTitle = document.getElementById('song-title');
 const songDj = document.getElementById('song-dj');
@@ -72,38 +70,35 @@ const queueList = document.getElementById('queue-list');
 const queueCount = document.getElementById('queue-count');
 const chatInput = document.getElementById('chat-input');
 
-// ─── Color Picker ────────────────────────────────────────────────────────────
+// ─── Color Picker (Guest tab only) ───────────────────────────────────────────
 let selectedColor = '#6366f1';
-const colorBtns = document.querySelectorAll('.color-btn');
-
-colorBtns.forEach(btn => {
+document.querySelectorAll('#tab-guest .color-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    colorBtns.forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('#tab-guest .color-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     selectedColor = btn.dataset.color;
   });
 });
 
 // ─── Join ────────────────────────────────────────────────────────────────────
-joinBtn.addEventListener('click', joinWorld);
-nicknameInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') joinWorld();
-});
-
+// Called by UI.enterWorld() after auth or guest selection
 function joinWorld() {
-  const nickname = nicknameInput.value.trim() || 'Anon';
+  const isGuest = window.UI?.isGuest ?? true;
+  const token = window.UI?.token;
 
-  socket = io();
-
-  socket.on('connect', () => {
-    socket.emit('join', { nickname, color: selectedColor });
-  });
+  if (isGuest) {
+    // Guest mode — connect without auth
+    const nickname = document.getElementById('nickname-input')?.value?.trim() || 'Anon';
+    socket = io();
+    socket.on('connect', () => {
+      socket.emit('join', { nickname, color: selectedColor });
+    });
+  } else {
+    // Authenticated mode — connect with JWT
+    socket = io({ auth: { token } });
+  }
 
   setupSocketListeners();
-
-  joinModal.classList.add('hidden');
-  gameContainer.classList.remove('hidden');
-
   initCanvas();
   loadYouTubeAPI();
   gameLoop();
@@ -214,6 +209,10 @@ function setupSocketListeners() {
     currentSong = song;
     updateNowPlaying(song);
     loadSongThumbnail(song.videoId);
+    // Activate music reactive animations
+    if (window.AnimationEngine) {
+      AnimationEngine.setBeat(120); // Default BPM, will improve with detection later
+    }
     if (playerReady) {
       loadVideo(song.videoId, 0);
     } else {
@@ -228,11 +227,79 @@ function setupSocketListeners() {
       songThumbnailLoaded = false;
       songTitle.textContent = 'No song playing';
       songDj.textContent = 'Add a YouTube URL below';
+      // Stop music reactive animations
+      if (window.AnimationEngine) {
+        AnimationEngine.stopMusic();
+      }
     }
   });
 
   socket.on('queue-updated', (queue) => {
     renderQueue(queue);
+  });
+
+  // ─── Proximity & Discovery Events (Req 5 + 6) ───────────────────
+  socket.on('nearby-players', (list) => {
+    if (window.ProfileCard) ProfileCard.updateNearby(list);
+  });
+
+  socket.on('profile-card', (data) => {
+    if (window.ProfileCard) ProfileCard.open(data);
+  });
+
+  socket.on('profile-card-error', (data) => {
+    console.log('Profile card error:', data.error);
+  });
+
+  socket.on('couple-emote', (data) => {
+    if (window.ProfileCard) ProfileCard.addCoupleEmote(data);
+  });
+
+  socket.on('spotlight-effect', (data) => {
+    if (window.ProfileCard) ProfileCard.addSpotlight(data);
+  });
+
+  socket.on('player-vip-status', (data) => {
+    if (window.ProfileCard) {
+      if (data.isVip) ProfileCard.vipPlayers.add(data.playerId);
+      else ProfileCard.vipPlayers.delete(data.playerId);
+    }
+  });
+
+  socket.on('entered-vip-zone', () => {
+    socket.emit('enter-vip');
+  });
+
+  socket.on('left-vip-zone', () => {
+    socket.emit('leave-vip');
+  });
+
+  socket.on('vip-denied', (data) => {
+    // Show upgrade message (could be a toast)
+    console.log('VIP denied:', data.error);
+  });
+
+  socket.on('match-created', (data) => {
+    // Close profile card and show match celebration
+    if (window.ProfileCard) ProfileCard.close();
+    // Reload matches list
+    if (window.UI && !UI.isGuest) {
+      UI.loadMatches();
+      UI.loadConversations();
+    }
+  });
+
+  // DM received via socket
+  socket.on('dm:receive', (msg) => {
+    if (window.UI) UI.onDmReceive(msg);
+  });
+
+  socket.on('dm:sent', (msg) => {
+    // Confirmation that message was sent successfully
+  });
+
+  socket.on('dm:status', (data) => {
+    // Message status update (delivered/read)
   });
 }
 
@@ -290,11 +357,13 @@ function update() {
 
   let moved = false;
   let dx = 0, dy = 0;
+  const isRunning = keys['Shift'];
+  const speed = isRunning ? SPEED * 1.5 : SPEED;
 
-  if (keys['ArrowUp'] || keys['w'] || keys['W']) { dy = -SPEED; myPlayer.direction = 'up'; moved = true; }
-  if (keys['ArrowDown'] || keys['s'] || keys['S']) { dy = SPEED; myPlayer.direction = 'down'; moved = true; }
-  if (keys['ArrowLeft'] || keys['a'] || keys['A']) { dx = -SPEED; myPlayer.direction = 'left'; moved = true; }
-  if (keys['ArrowRight'] || keys['d'] || keys['D']) { dx = SPEED; myPlayer.direction = 'right'; moved = true; }
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) { dy = -speed; myPlayer.direction = 'up'; moved = true; }
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) { dy = speed; myPlayer.direction = 'down'; moved = true; }
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) { dx = -speed; myPlayer.direction = 'left'; moved = true; }
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) { dx = speed; myPlayer.direction = 'right'; moved = true; }
 
   if (moved) {
     myPlayer.x = Math.max(0, Math.min(mapWidth - CHAR_WIDTH, myPlayer.x + dx));
@@ -320,6 +389,14 @@ function update() {
   camera.y = myPlayer.y - canvas.height / 2 + CHAR_HEIGHT / 2;
   camera.x = Math.max(0, Math.min(mapWidth - canvas.width, camera.x));
   camera.y = Math.max(0, Math.min(mapHeight - canvas.height, camera.y));
+
+  // Update animation states for all players
+  if (window.AnimationEngine) {
+    const isRunning = keys['Shift'];
+    players.forEach((p) => {
+      AnimationEngine.update(p.id, p.x, p.y, p.id === myPlayer.id ? isRunning : false);
+    });
+  }
 
   // Spawn monsters on the beat (only when music is playing)
   if (currentSong) {
@@ -362,15 +439,41 @@ function render() {
   ctx.translate(-camera.x, -camera.y);
 
   drawMap();
+
+  // Draw VIP Area (Req 6)
+  if (window.ProfileCard) {
+    ProfileCard.drawVipArea(ctx, camera);
+  }
+
   drawMonsters();
   drawProjectiles();
   drawPlayers();
   drawKillEffects();
 
+  // Draw proximity interest glow (Req 5)
+  if (window.ProfileCard) {
+    ProfileCard.drawInterestGlow(ctx, camera);
+  }
+
+  // Draw couple emotes (Req 6)
+  if (window.ProfileCard) {
+    ProfileCard.drawCoupleEmotes(ctx, camera);
+  }
+
+  // Draw spotlight effects (Req 6)
+  if (window.ProfileCard) {
+    ProfileCard.drawSpotlights(ctx, camera);
+  }
+
   ctx.restore();
 
   // Draw HUD (score) - not affected by camera
   drawHUD();
+
+  // Draw proximity "Press E" prompt (screen-space, after camera restore)
+  if (window.ProfileCard) {
+    ProfileCard.drawProximityPrompt(ctx, camera);
+  }
 }
 
 function drawMap() {
@@ -497,13 +600,18 @@ function drawRock(x, y) {
 }
 
 function drawStage(x, y) {
+  // AnimationEngine stage lighting (music reactive)
+  if (window.AnimationEngine) {
+    AnimationEngine.updateStageLighting(ctx, x, y, 100);
+  }
+
   // Platform
   ctx.fillStyle = '#5a4a3a';
   ctx.fillRect(x, y + 30, 100, 12);
   ctx.fillStyle = '#4a3a2a';
   ctx.fillRect(x, y + 42, 100, 6);
 
-  // Speakers
+  // Speakers (with pulse from AnimationEngine)
   ctx.fillStyle = '#2a2a2a';
   ctx.fillRect(x + 5, y + 10, 20, 20);
   ctx.fillRect(x + 75, y + 10, 20, 20);
@@ -513,12 +621,17 @@ function drawStage(x, y) {
   ctx.fillRect(x + 9, y + 14, 12, 12);
   ctx.fillRect(x + 79, y + 14, 12, 12);
 
-  // Music note indicator
+  // Music note indicator + floating notes
   if (currentSong) {
     const bounce = Math.sin(Date.now() / 300) * 3;
     ctx.fillStyle = '#f59e0b';
     ctx.fillRect(x + 46, y - 5 + bounce, 8, 8);
     ctx.fillRect(x + 44, y - 10 + bounce, 4, 8);
+
+    // Floating music notes
+    if (window.AnimationEngine) {
+      AnimationEngine.drawMusicNotes(ctx, x, y, 100);
+    }
   }
 }
 
@@ -577,6 +690,10 @@ function drawFloatingBillboard() {
 function drawPlayers() {
   players.forEach((p) => {
     drawCharacter(p);
+    // Draw VIP badge if applicable
+    if (window.ProfileCard) {
+      ProfileCard.drawVipBadge(ctx, p, { x: 0, y: 0 }); // already in camera-translated context
+    }
   });
 }
 
@@ -584,6 +701,18 @@ function drawCharacter(p) {
   const x = p.x;
   let y = p.y;
   const color = p.color || '#6366f1';
+
+  // Apply AnimationEngine effects (music bounce + idle breathing)
+  let animState = null;
+  if (window.AnimationEngine) {
+    animState = AnimationEngine.getState(p.id);
+    // Music bounce
+    y -= animState.musicBounce || 0;
+    // Idle breathing
+    if (animState.action === 'idle' && !danceStates.has(p.id)) {
+      y += animState.idleBreathOffset || 0;
+    }
+  }
 
   // Check dance state
   const dance = danceStates.get(p.id);
@@ -640,18 +769,30 @@ function drawCharacter(p) {
     ctx.fillRect(x + 18, y + 10, 3, 3);
   }
 
-  // Legs
+  // Legs (with walk cycle from AnimationEngine)
   ctx.fillStyle = '#2a2a4a';
   if (dance && dance.emote === 'dance') {
     const legKick = Math.sin(Date.now() / 100) * 3;
     ctx.fillRect(x + 9 + legKick, y + 36, 6, 10);
     ctx.fillRect(x + 17 - legKick, y + 36, 6, 10);
+  } else if (animState && animState.isMoving) {
+    // 4-frame walk cycle
+    const legOffsets = [
+      { left: 0, right: 0 },
+      { left: -3, right: 3 },
+      { left: 0, right: 0 },
+      { left: 3, right: -3 }
+    ];
+    const stride = animState.action === 'run' ? 1.5 : 1;
+    const offset = legOffsets[animState.walkFrame] || legOffsets[0];
+    ctx.fillRect(x + 9 + offset.left * stride, y + 36, 6, 10);
+    ctx.fillRect(x + 17 + offset.right * stride, y + 36, 6, 10);
   } else {
     ctx.fillRect(x + 9, y + 36, 6, 10);
     ctx.fillRect(x + 17, y + 36, 6, 10);
   }
 
-  // Arms
+  // Arms (with walk swing from AnimationEngine)
   ctx.fillStyle = color;
   if (dance && armAngle !== 0) {
     const armUp = Math.sin(Date.now() / 150) * 6;
@@ -1077,8 +1218,4 @@ function loadSongThumbnail(videoId) {
 }
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+// escapeHtml is defined globally in ui.js (loaded before app.js)

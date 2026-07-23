@@ -1,0 +1,17 @@
+1.HTML_LOADS {"status":200,"authModal":true}
+2.JS_FILES {"ui.js":true,"animation.js":true,"avatar-renderer.js":true,"profile-card.js":true}
+3.CSS_STYLES {"status":200,"allNewStyles":true}
+4.REGISTER {"s":409,"user":"An account with this email already exists"}
+5.LOGIN {"s":200,"hasToken":true}
+6.PROFILE {"s":200,"name":"TestUser","gender":"male"}
+7.AVATAR {"s":200,"bodyType":"male","hairColor":"#ffd700","equippedCount":0}
+8.MATCHES {"s":200,"count":1}
+9.CONVERSATIONS {"s":200,"count":1}
+10.LIKES_REMAINING {"s":200,"remaining":null,"limit":"unlimited"}
+11.SHOP {"s":200,"itemCount":10}
+12.INVENTORY {"s":200,"ownedItems":1}
+13.NOTIFICATIONS {"s":200,"count":6}
+14.RELATIONSHIP {"s":200,"status":"single"}
+15.SWAGGER {"s":200,"isJson":true}
+SUMMARY {"passed":"12/12","allPassed":true}
+DONE "Frontend integration test complete!"

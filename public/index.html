@@ -7,27 +7,66 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Join Modal -->
-  <div id="join-modal" class="modal-overlay">
-    <div class="modal">
-      <h2>Enter the World</h2>
-      <p class="modal-subtitle">Pick a name and color for your pixel character</p>
-      <div class="modal-form">
-        <input type="text" id="nickname-input" placeholder="Your name" maxlength="12" autocomplete="off">
-        <div class="color-picker">
-          <label>Character color:</label>
-          <div class="color-options">
-            <button class="color-btn selected" data-color="#6366f1" style="background:#6366f1"></button>
-            <button class="color-btn" data-color="#ec4899" style="background:#ec4899"></button>
-            <button class="color-btn" data-color="#14b8a6" style="background:#14b8a6"></button>
-            <button class="color-btn" data-color="#f59e0b" style="background:#f59e0b"></button>
-            <button class="color-btn" data-color="#ef4444" style="background:#ef4444"></button>
-            <button class="color-btn" data-color="#8b5cf6" style="background:#8b5cf6"></button>
-            <button class="color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
-            <button class="color-btn" data-color="#10b981" style="background:#10b981"></button>
-          </div>
+  <!-- Auth Modal (Login/Register) -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal auth-modal">
+      <h2>Pixel Music World</h2>
+      <p class="modal-subtitle">Virtual Concert + Social Matching</p>
+
+      <!-- Tab Switcher -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Login</button>
+        <button class="auth-tab" data-tab="register">Register</button>
+        <button class="auth-tab" data-tab="guest">Guest</button>
+      </div>
+
+      <!-- Login Form -->
+      <div id="tab-login" class="auth-tab-content active">
+        <div class="modal-form">
+          <input type="email" id="login-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+          <button id="login-btn" class="btn-primary">Login</button>
+          <p class="auth-error hidden" id="login-error"></p>
+          <div class="auth-divider"><span>or</span></div>
+          <button id="line-login-btn" class="btn-line">Login with LINE</button>
         </div>
-        <button id="join-btn" class="btn-primary">Enter World</button>
+      </div>
+
+      <!-- Register Form -->
+      <div id="tab-register" class="auth-tab-content">
+        <div class="modal-form">
+          <input type="text" id="reg-nickname" placeholder="Nickname" maxlength="50" autocomplete="off">
+          <input type="email" id="reg-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="reg-password" placeholder="Password (8+ chars)" autocomplete="new-password">
+          <div class="dob-field">
+            <label>Date of Birth (must be 18+)</label>
+            <input type="date" id="reg-dob" max="">
+          </div>
+          <button id="register-btn" class="btn-primary">Create Account</button>
+          <p class="auth-error hidden" id="reg-error"></p>
+        </div>
+      </div>
+
+      <!-- Guest Form (original) -->
+      <div id="tab-guest" class="auth-tab-content">
+        <div class="modal-form">
+          <p class="guest-note">Play without account. Matching and chat features require login.</p>
+          <input type="text" id="nickname-input" placeholder="Your name" maxlength="12" autocomplete="off">
+          <div class="color-picker">
+            <label>Character color:</label>
+            <div class="color-options">
+              <button class="color-btn selected" data-color="#6366f1" style="background:#6366f1"></button>
+              <button class="color-btn" data-color="#ec4899" style="background:#ec4899"></button>
+              <button class="color-btn" data-color="#14b8a6" style="background:#14b8a6"></button>
+              <button class="color-btn" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="color-btn" data-color="#ef4444" style="background:#ef4444"></button>
+              <button class="color-btn" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+              <button class="color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
+              <button class="color-btn" data-color="#10b981" style="background:#10b981"></button>
+            </div>
+          </div>
+          <button id="join-btn" class="btn-primary">Enter as Guest</button>
+        </div>
       </div>
     </div>
   </div>
@@ -39,31 +78,100 @@
       <canvas id="game-canvas"></canvas>
     </div>
 
-    <!-- Queue Panel (right side) -->
-    <div id="queue-panel">
-      <div class="now-playing-box">
-        <h3>Now Playing</h3>
-        <div id="now-playing-info">
+    <!-- Right Panel (Queue + Matches + Chat) -->
+    <div id="right-panel">
+      <!-- Panel Tabs -->
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-panel="music">Music</button>
+        <button class="panel-tab" data-panel="matches">Matches</button>
+        <button class="panel-tab" data-panel="chat">Chat</button>
+        <button class="panel-tab" data-panel="avatar">Avatar</button>
+      </div>
+
+      <!-- Music Panel (existing queue) -->
+      <div id="panel-music" class="panel-content active">
+        <div class="now-playing-box">
+          <h3>Now Playing</h3>
           <p id="song-title">No song playing</p>
           <p id="song-dj" class="text-muted">Add a YouTube URL below</p>
+          <div class="player-controls">
+            <button id="skip-btn" class="btn-small">Skip</button>
+          </div>
         </div>
-        <div class="player-controls">
-          <button id="skip-btn" class="btn-small" title="Skip">Skip</button>
+        <div class="add-song-box">
+          <input type="text" id="song-url-input" placeholder="YouTube URL..." autocomplete="off">
+          <button id="add-song-btn" class="btn-primary btn-small">+</button>
+        </div>
+        <div class="queue-box">
+          <h4>Queue <span id="queue-count">(0)</span></h4>
+          <ul id="queue-list"></ul>
         </div>
       </div>
 
-      <div class="add-song-box">
-        <input type="text" id="song-url-input" placeholder="Paste YouTube URL..." autocomplete="off">
-        <button id="add-song-btn" class="btn-primary btn-small">Add</button>
+      <!-- Matches Panel -->
+      <div id="panel-matches" class="panel-content">
+        <div class="matches-header">
+          <h3>Matches</h3>
+          <span id="likes-remaining" class="text-muted"></span>
+        </div>
+        <div id="match-list" class="match-list">
+          <p class="text-muted" id="no-matches">No matches yet. Walk near players and press E!</p>
+        </div>
       </div>
 
-      <div class="queue-box">
-        <h4>Queue <span id="queue-count">(0)</span></h4>
-        <ul id="queue-list"></ul>
+      <!-- Chat Panel (DM) -->
+      <div id="panel-chat" class="panel-content">
+        <div id="chat-panel-header" class="chat-panel-header hidden">
+          <button id="chat-back-btn" class="btn-small">Back</button>
+          <span id="chat-partner-name">Chat</span>
+        </div>
+        <div id="chat-conversation-list">
+          <p class="text-muted" id="no-convos">Match with someone to start chatting!</p>
+        </div>
+        <div id="chat-messages-view" class="hidden">
+          <div id="chat-messages" class="chat-messages"></div>
+          <div class="chat-send-bar">
+            <input type="text" id="dm-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
+            <button id="dm-send-btn" class="btn-primary btn-small">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Avatar Panel -->
+      <div id="panel-avatar" class="panel-content">
+        <div id="avatar-editor" class="avatar-editor">
+          <h3>Avatar</h3>
+          <div id="avatar-preview" class="avatar-preview">
+            <canvas id="avatar-preview-canvas" width="64" height="96"></canvas>
+          </div>
+          <div class="avatar-section">
+            <label>Body Type</label>
+            <div class="avatar-options" id="body-type-options">
+              <button class="av-opt" data-value="male">Male</button>
+              <button class="av-opt" data-value="female">Female</button>
+              <button class="av-opt" data-value="non-binary">Non-binary</button>
+            </div>
+          </div>
+          <div class="avatar-section">
+            <label>Hair Color</label>
+            <div class="color-options" id="hair-color-options"></div>
+          </div>
+          <div class="avatar-section">
+            <label>Skin Tone</label>
+            <div class="color-options" id="skin-tone-options"></div>
+          </div>
+          <div class="avatar-section">
+            <label>Equipped Items</label>
+            <div id="equipped-items" class="equipped-items"></div>
+          </div>
+          <button id="save-avatar-btn" class="btn-primary btn-small">Save Avatar</button>
+          <button id="open-shop-btn" class="btn-small">Open Shop</button>
+        </div>
+        <p class="text-muted auth-only-msg" id="avatar-auth-msg">Login required to customize avatar</p>
       </div>
     </div>
 
-    <!-- Chat bar at bottom -->
+    <!-- Chat bar at bottom (room chat) -->
     <div id="chat-bar">
       <div class="emote-bar">
         <button class="emote-btn" data-emote="dance" title="Dance (1)">💃</button>
@@ -71,8 +179,13 @@
         <button class="emote-btn" data-emote="jump" title="Jump (3)">⬆️</button>
         <button class="emote-btn" data-emote="spin" title="Spin (4)">🌀</button>
         <button class="emote-btn" data-emote="heart" title="Heart (5)">❤️</button>
+        <button class="emote-btn spotlight-btn" data-emote="spotlight" title="Spotlight (Premium)">✨</button>
       </div>
-      <input type="text" id="chat-input" placeholder="Press Enter to chat... (1-5 for emotes)" maxlength="150" autocomplete="off">
+      <input type="text" id="chat-input" placeholder="Press Enter to chat... (1-5 for emotes, E for profiles)" maxlength="150" autocomplete="off">
+      <div class="chat-bar-right">
+        <button id="date-invite-btn" class="btn-small hidden" title="Invite to Date">💌 Date</button>
+        <span id="user-status-badge" class="hidden"></span>
+      </div>
     </div>
 
     <!-- Hidden YouTube player -->
@@ -81,7 +194,27 @@
     </div>
   </div>
 
+  <!-- Shop Modal -->
+  <div id="shop-modal" class="modal-overlay hidden">
+    <div class="modal shop-modal">
+      <h2>Item Shop</h2>
+      <button class="pc-close" onclick="document.getElementById('shop-modal').classList.add('hidden')">✕</button>
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-cat="hair">Hair</button>
+        <button class="shop-tab" data-cat="top">Top</button>
+        <button class="shop-tab" data-cat="bottom">Bottom</button>
+        <button class="shop-tab" data-cat="shoes">Shoes</button>
+        <button class="shop-tab" data-cat="accessory">Acc</button>
+      </div>
+      <div id="shop-items" class="shop-items"></div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
+  <script src="animation.js"></script>
+  <script src="avatar-renderer.js"></script>
+  <script src="profile-card.js"></script>
+  <script src="ui.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
